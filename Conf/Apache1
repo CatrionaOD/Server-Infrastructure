@@ -1,0 +1,153 @@
+ServerRoot /sys_apps_01/apache/server20Cent/versions/server2.4.10
+DefaultRuntimeDir /sys_apps_01/apache/server20Cent/logs/sample_instance
+ServerName dev.InfrAutoApp01.mastercard.int
+DocumentRoot /apps_01/webcontent/sample_instance/htdocs
+
+PidFile /sys_apps_01/apache/server20Cent/logs/sample_instance/httpd.pid
+
+Timeout 30
+KeepAlive On
+MaxKeepAliveRequests 100
+KeepAliveTimeout 15
+
+GracefulShutdownTimeout 60
+MaxConnectionsPerChild 10000
+MaxRequestWorkers 150
+
+LoadModule mpm_worker_module modules/mod_mpm_worker.so
+LoadModule unixd_module modules/mod_unixd.so
+
+<IfModule mpm_worker_module>
+   StartServers 2
+   ThreadsPerChild 25
+   MinSpareThreads 25
+   MaxSpareThreads 75
+   ServerLimit 16
+</IfModule>
+
+<IfModule prefork_module>
+   StartServers 5
+   MinSpareServers 5
+   MaxSpareServers 10
+   ServerLimit 256
+</IfModule>
+
+<IfModule unixd_module>
+   User www
+   Group www
+</IfModule>
+
+<Directory />
+   AllowOverride None
+   Require all denied
+</Directory>
+
+<Directory /apps_01/webcontent/sample_instance>
+   Require all granted
+</Directory>
+
+<Files ~ "^\.">
+   Require all denied
+</Files>
+
+<Location />
+   AllowMethods GET POST HEAD
+</Location>
+
+UseCanonicalName Off
+
+DirectoryIndex index.html index.htm
+AccessFileName .htaccess
+
+TypesConfig conf/mime.types
+MIMEMagicFile conf/magic
+
+ServerAdmin web_administration@mastercard.com
+ServerTokens Prod
+ServerSignature Off
+HostnameLookups Off
+Header set Server Apache
+Header unset X-Powered-By
+
+AddEncoding x-compress Z
+AddEncoding x-gzip gz tgz
+
+AddType application/x-tar .tgz
+AddType image/x-icon .ico
+
+LoadModule authn_core_module modules/mod_authn_core.so
+LoadModule authz_core_module modules/mod_authz_core.so
+LoadModule authz_host_module modules/mod_authz_host.so
+LoadModule include_module modules/mod_include.so
+LoadModule log_config_module modules/mod_log_config.so
+LoadModule env_module modules/mod_env.so
+LoadModule mime_module modules/mod_mime.so
+LoadModule mime_magic_module modules/mod_mime_magic.so
+LoadModule headers_module modules/mod_headers.so
+LoadModule setenvif_module modules/mod_setenvif.so
+LoadModule proxy_module modules/mod_proxy.so
+LoadModule proxy_http_module modules/mod_proxy_http.so
+LoadModule proxy_balancer_module modules/mod_proxy_balancer.so
+LoadModule lbmethod_bybusyness_module modules/mod_lbmethod_bybusyness.so
+LoadModule lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so
+LoadModule lbmethod_bytraffic_module modules/mod_lbmethod_bytraffic.so
+LoadModule dir_module modules/mod_dir.so
+LoadModule alias_module modules/mod_alias.so
+LoadModule rewrite_module modules/mod_rewrite.so
+LoadModule allowmethods_module modules/mod_allowmethods.so
+LoadModule slotmem_shm_module modules/mod_slotmem_shm.so
+LoadModule socache_shmcb_module modules/mod_socache_shmcb.so
+LoadModule ssl_module modules/mod_ssl.so
+LoadModule cache_module modules/mod_cache.so
+LoadModule cache_disk_module modules/mod_cache_disk.so
+
+#SSLCryptoDevice chil
+SSLPassPhraseDialog  exec:/sys_apps_01/apache/server20Cent/ssl/sample_instance/passphrase.sh
+SSLSessionCache shmcb:/sys_apps_01/apache/server20Cent/logs/sample_instance/ssl_scache
+SSLRandomSeed startup builtin
+SSLRandomSeed startup file:/dev/urandom 1024
+SSLRandomSeed connect builtin
+SSLProxyCheckPeerCN Off
+SSLProxyCheckPeerName Off
+SSLProxyEngine On
+
+SSLProtocol all -SSLv2
+SSLProxyProtocol all -SSLv2
+SSLCipherSuite !EXPORT:!LOW:!ADH:!IDEA:!RC4:!RC2:!MD5:!NULL:ALL:+AES:+TLSv1:+SSLv3:@STRENGTH
+
+TraceEnable Off
+EnableSendFile Off
+BalancerPersist Off
+#Define adminPort {ADMINPORT}
+#Define testEnvironment
+#IncludeOptional /sys_apps_01/webadmin/scripts/apache/adminVHost*.inc
+
+LogLevel warn
+LogFormat "%h %l %u %t %r %s %b %{Referer}i %{User-agent}i userid=%{cookie}n sec=%T usec=%D fwd=%{X-Forwarded-For}i,%{X-Teros-Client-IP}i route=%{BALANCER_WORKER_ROUTE}e" mastercard
+ErrorLog "|/sys_apps_01/apache/server20Cent/versions/server2.4.10/bin/rotatelogs -f -l -c -p /bin/gzip -L /sys_apps_01/apache/server20Cent/logs/sample_instance/error_log /sys_apps_01/apache/server20Cent/logs/log_backups/sample_instance/error_log.%Y%m%d 86400"
+CustomLog "|/sys_apps_01/apache/server20Cent/versions/server2.4.10/bin/rotatelogs -f -l -c -p /bin/gzip -L /sys_apps_01/apache/server20Cent/logs/sample_instance/access_log /sys_apps_01/apache/server20Cent/logs/log_backups/sample_instance/access_log.%Y%m%d 86400" masterca
+rd
+
+Listen 10.24.131.29:8443
+
+<VirtualHost 10.24.131.29:8443>
+  ServerName dev.InfrAutoApp01.mastercard.int
+
+  SSLEngine On
+  SSLCertificateFile /sys_apps_01/apache/server20Cent/ssl/sample_instance/sample_instance.crt
+  SSLCertificateKeyFile /sys_apps_01/apache/server20Cent/ssl/sample_instance/sample_instance.key
+  SSLCertificateChainFile /sys_apps_01/apache/server20Cent/ssl/mastercard_public_gen3.pem
+
+  SSLProxyMachineCertificateChainFile /sys_apps_01/apache/server20Cent/ssl/sample_instance/ca_client.crt
+  SSLProxyMachineCertificateFile /sys_apps_01/apache/server20Cent/ssl/sample_instance/pem_sample.pem
+  SSLProxyCACertificateFile /sys_apps_01/apache/server20Cent/ssl/mastercard_public_gen3.pem
+
+  ProxyPass        / https://10.24.131.29:25004/helloworld/hi.jsp
+  ProxyPassReverse / https://10.24.131.29:25004/helloworld/hi.jsp
+
+  Redirect 404 /favicon.ico
+  <Location /favicon.ico>
+    ErrorDocument 404 "No favicon"
+  </Location>
+
+</VirtualHost>
